@@ -40,7 +40,7 @@ namespace Payments.Domain
             }
 
             var discountAmount = amount * discountPercentage / 100;
-            var finalAmount = amount - discountAmount
+            var finalAmount = amount - discountAmount;
 
             return (discountPercentage > 0, finalAmount);
         }
