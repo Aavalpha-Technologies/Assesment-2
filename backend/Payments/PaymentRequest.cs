@@ -1,17 +1,12 @@
-using Payments.Domain;
-
 namespace Payments
 {
     public class PaymentRequest
     {
         public decimal Amount { get; set; }
-        public CardDetails CardDetails { get; set; }
-    }
-
-    public class CardDetails
-    {
-        public string CardNumber { get; set; }
-        public string Expiry { get; set; }
-        public string CVV { get; set; }
+        
+        // "required" keyword fixes the CS8618 warnings
+        public required string CardNumber { get; set; }
+        public required string Expiry { get; set; }
+        public required string CVV { get; set; }
     }
 }
