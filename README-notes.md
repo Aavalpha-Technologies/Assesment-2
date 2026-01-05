@@ -1,34 +1,77 @@
-# README Notes – Payment Feature
+Key Design Decisions
 
-## Design Decisions
+1]Frontend-Backend Connection
 
-- Backend (.NET) is responsible for all business logic such as identifying card type and calculating discounts.
-- Frontend (React) only sends required data and displays the calculated result received from backend.
-- Discount calculation logic is kept inside a separate domain class to keep the controller clean.
-- React UI flow is kept simple and clear:
-  Basket → Payment → Order Success page.
+React frontend (CreditCardForm.jsx) sends payment request to .NET backend (PaymentsController.cs) using fetch.
 
-## Trade-offs
+Backend returns discounted total and payment result.
 
-- Used static basket data instead of database storage to keep the implementation simple.
-- No real payment gateway is integrated; payment is simulated.
-- Focused more on functionality than UI design.
+2]Discount Logic
 
-## Assumptions
+Implemented in CalculateDiscount.cs.
 
-- Discount is based only on credit card type.
-- Backend always returns valid discount data.
-- Only INR currency is supported.
-- One order is processed at a time.
+Card types and discounts:
 
-## Skipped / Not Implemented
+Visa → 0%
 
-- No database persistence for orders or payments.
-- No authentication or user management.
-- No automated unit tests due to limited time.
-- No advanced error retry mechanism.
+MasterCard → 5%
 
-## Notes
+RuPay → 10%
 
-- Code structure allows easy extension of discount rules.
-- Frontend and backend are loosely coupled using REST API.
+Default card type is RuPay if card number prefix doesn’t match.
+
+3]UI Display
+
+Payment.jsx shows basket items, subtotal, GST, total, and discounted amount.
+
+OrderSuccess.jsx shows order confirmation along with discounted total after payment.
+
+4]Error Handling
+
+Validates card number (16 digits), expiry (MM/YY), CVV (3 digits).
+
+Shows user-friendly error messages if validation fails or API cannot connect.
+
+5]Trade-offs Made
+
+No real payment gateway integration; payment success is simulated.
+
+Minimal styling; focused on functionality over design.
+
+No unit tests due to time limit (could be added for discount logic and API).
+
+6]Assumptions
+
+User enters card details in correct format.
+
+Discount is applied only based on card type prefix.
+
+Payment backend simulates success; no real bank integration.
+
+7]Anything Unfinished / Intentionally Skipped
+
+Real payment gateway integration.
+
+Authentication or database storage.
+
+Pixel-perfect UI design.
+
+8]Steps Taken
+
+Forked the repo and cloned it to local machine.
+
+Created a feature branch: feat/payment-impl.
+
+Implemented discount calculation in CalculateDiscount.cs.
+
+Connected frontend (CreditCardForm.jsx) to backend (PaymentsController.cs).
+
+Updated Payment.jsx to display discounted total and manage payment flow.
+
+Updated OrderSuccess.jsx to show discounted total after payment.
+
+Ran backend using dotnet run and frontend using npm run dev.
+
+Tested "Pay Now" button: payment flow works and discount is calculated correctly.
+
+Committed all changes to feature branch with meaningful messages.
