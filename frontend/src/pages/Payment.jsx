@@ -6,6 +6,7 @@ import './Payment.css';
 const Payment = () => {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [paymentResult, setPaymentResult] = useState(null);
 
   const basketItems = [
     { id: 1, name: 'Laptop', price: 76000 },
@@ -22,7 +23,8 @@ const Payment = () => {
     setShowPaymentForm(true);
   };
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = (result) => {
+    setPaymentResult(result);
     setOrderPlaced(true);
   };
 
@@ -31,7 +33,7 @@ const Payment = () => {
   };
 
   if (orderPlaced) {
-    return <OrderSuccess />;
+    return <OrderSuccess paymentResult={paymentResult} />;
   }
 
   if (showPaymentForm) {

@@ -1,7 +1,7 @@
 import React from 'react';
 import './OrderSuccess.css';
 
-const OrderSuccess = () => {
+const OrderSuccess = ({ paymentResult }) => {
   const handleNewOrder = () => {
     window.location.href = '/Payment';
   };
@@ -26,6 +26,20 @@ const OrderSuccess = () => {
         </div>
         
         <h1>Order Placed Successfully!</h1>
+
+        {/* 🔹 Payment Summary */}
+        {paymentResult && (
+          <div className="payment-summary">
+            <p>
+              <strong>Discount Applied:</strong>{" "}
+              {paymentResult.discountApplied ? "Yes" : "No"}
+            </p>
+            <p>
+              <strong>Final Amount Paid:</strong>{" "}
+              INR {paymentResult.finalAmount.toLocaleString('en-IN')}
+            </p>
+          </div>
+        )}
         
         <p className="thank-you-message">
           Thank you for your purchase. Your order has been confirmed and will be processed shortly.
