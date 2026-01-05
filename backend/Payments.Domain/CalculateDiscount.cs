@@ -1,18 +1,33 @@
-﻿using System;
-
-namespace Payments.Domain
+﻿namespace Payments.Domain
 {
     public class CalculateDiscount
     {
-        public static CardType GetCardType(string cardNumber)
+        public static string GetCardType(string cardNumber)
         {
-            return CardType.RuPay;
+            if (string.IsNullOrWhiteSpace(cardNumber))
+                return "RuPay";
+
+            if (cardNumber.StartsWith('4'))
+                return "Visa";
+
+            if (cardNumber.StartsWith('5'))
+                return "MasterCard";
+
+            if (cardNumber.StartsWith('6'))
+                return "RuPay";
+
+            return "RuPay";   // Default always RuPay
         }
 
-        public static (bool DiscountApplied, decimal FinalAmount) Calculate(CardType cardType, decimal amount)
+        public static int GetDiscount(string cardType)
         {
-
-            return (true, 0);
+            return cardType switch
+            {
+                "Visa" => 0,
+                "MasterCard" => 5,
+                "RuPay" => 10,
+                _ => 10
+            };
         }
     }
 }
