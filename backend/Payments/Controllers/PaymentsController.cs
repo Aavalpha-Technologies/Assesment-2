@@ -10,17 +10,15 @@ namespace Payments.Controllers
         [HttpPost("Pay")]
         public IActionResult Pay([FromBody] PaymentRequest request)
         {
-            // 1. Basic Validation
+            // 1. Validate
             if (request.Amount <= 0) return BadRequest("Invalid Amount");
             if (string.IsNullOrEmpty(request.CardNumber)) return BadRequest("Card number is required");
 
-            // 2. Identify Card Type
+            // 2. Logic
             var cardType = CalculateDiscount.GetCardType(request.CardNumber);
-
-            // 3. Calculate Discount
             var result = CalculateDiscount.Calculate(cardType, request.Amount);
 
-            // 4. Create Response
+            // 3. Response (Filling all REQUIRED fields to fix CS9035)
             var response = new PaymentResponse
             {
                 Result = true,

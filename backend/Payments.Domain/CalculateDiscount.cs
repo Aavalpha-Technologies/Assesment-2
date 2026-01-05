@@ -12,8 +12,7 @@ namespace Payments.Domain
             if (cardNumber.StartsWith("5")) return CardType.MasterCard;
             if (cardNumber.StartsWith("6")) return CardType.RuPay;
 
-            // Requirement: Default must be RuPay
-            return CardType.RuPay;
+            return CardType.RuPay; // Default requirement
         }
 
         public static (bool DiscountApplied, decimal FinalAmount) Calculate(CardType cardType, decimal amount)
@@ -22,22 +21,15 @@ namespace Payments.Domain
 
             switch (cardType)
             {
-                case CardType.Visa:
-                    discountPercent = 0m; // 0%
-                    break;
-                case CardType.MasterCard:
-                    discountPercent = 0.05m; // 5%
-                    break;
-                case CardType.RuPay:
-                    discountPercent = 0.10m; // 10%
-                    break;
+                case CardType.Visa: discountPercent = 0m; break;
+                case CardType.MasterCard: discountPercent = 0.05m; break; // 5%
+                case CardType.RuPay: discountPercent = 0.10m; break; // 10%
             }
 
             decimal discountAmount = amount * discountPercent;
             decimal finalAmount = amount - discountAmount;
-            bool isDiscounted = discountPercent > 0;
 
-            return (isDiscounted, finalAmount);
+            return (discountPercent > 0, finalAmount);
         }
     }
 }

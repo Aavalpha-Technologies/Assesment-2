@@ -1,33 +1,28 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
 
-// 1. ADD THIS: Allow React (localhost:5173) to talk to .NET
+// 1. Enable CORS for React
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
-        policy =>
-        {
-            policy.WithOrigins("http://localhost:5173")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        });
+        policy => policy.WithOrigins("http://localhost:5173")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod());
 });
 
+// 2. Use Swagger (Works on .NET 8/10) instead of OpenApi
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// 2. ADD THIS: Use the CORS policy we just created
 app.UseCors("AllowReactApp");
 
 app.UseAuthorization();
