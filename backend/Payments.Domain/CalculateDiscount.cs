@@ -23,8 +23,26 @@ namespace Payments.Domain
 
         public static (bool DiscountApplied, decimal FinalAmount) Calculate(CardType cardType, decimal amount)
         {
+            decimal discountPercentage = 0;
 
-            return (true, 0);
+            switch (cardType) 
+            {
+                case CardType.MasterCard:
+                    discountPercentage = 5;
+                    break;
+                case CardType.RuPay:
+                    discountPercentage = 10;
+                    break;
+                case CardType.Visa:
+                default:
+                    discountPercentage = 0;
+                    break;
+            }
+
+            var discountAmount = amount * discountPercentage / 100;
+            var finalAmount = amount - discountAmount
+
+            return (discountPercentage > 0, finalAmount);
         }
     }
 }
