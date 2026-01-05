@@ -71,23 +71,28 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3000/Payment/Pay', {
+      const response = await fetch('http://localhost:5084/Payments/Pay', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
-          expiry: cardDetails.expiry,
-          cvv: cardDetails.cvv,
+          cardDetails:{
+              cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
+              expiry: cardDetails.expiry,
+              cvv: cardDetails.cvv,
+          },
           amount: totalAmount,
         }),
       });
 
-      if (response.ok || response.status === 200) {
-        setTimeout(() => {
-          onSuccess();
-        }, 500);
+      if (response.ok) {
+         const data = await response.json();
+
+        onSuccess({
+          finalAmount: data.amount,
+          discountApplied: data.discountApplied,
+        });
       } else {
         setError('Payment failed. Please try again.');
       }
