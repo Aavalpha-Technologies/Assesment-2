@@ -1,173 +1,216 @@
-# Assessment-2 - React Payment Frontend
+# 🧮 Ecommerce Payment — Technical Assessment  
+**Avalpha Technologies**
 
-A complete React-based e-commerce payment frontend application with a mock backend server.
+Your task is to **finish and ship a production-quality Ecommerce Payment flow**.
 
-## Features
+The repository already contains a **scaffolded React frontend and a .NET backend**.  
+The controller and UI wiring exist, but **business logic and integration are intentionally incomplete**.
 
-- **Header** - Branded e-commerce header with store name
-- **Footer** - Professional footer with copyright and links
-- **Shopping Basket** - Displays dummy items:
-  - Laptop: INR 76,000
-  - KeyBoard: INR 3,000
-  - Headphones: INR 12,536
-- **Price Calculation**:
-  - Subtotal display
-  - GST calculation (18%)
-  - Total with GST display
-- **Payment Flow**:
-  - Credit card input form with validation
-  - Card number (16 digits with auto-formatting)
-  - Expiry date (MM/YY format)
-  - CVV (3 digits)
-  - Backend API integration
-- **Order Success** - Confirmation screen with thank you message
-- **Routing** - Default route to `/Payment`
+We are evaluating **how you think, structure code, and make trade-offs**, not just whether it “works”.
 
-## Project Structure
+---
 
-```
-Assesment-2/
-├── frontend/                 # React frontend application
-│   ├── src/
-│   │   ├── components/      # Reusable components
-│   │   │   ├── Header.jsx
-│   │   │   ├── Footer.jsx
-│   │   │   ├── CreditCardForm.jsx
-│   │   │   └── OrderSuccess.jsx
-│   │   ├── pages/           # Page components
-│   │   │   └── Payment.jsx
-│   │   ├── App.jsx          # Main app with routing
-│   │   └── main.jsx         # Entry point
-│   └── package.json
-├── mock-backend.js          # Mock payment API server
-└── README.md
-```
+## 🚀 What You’ll Build
 
-## Setup Instructions
+You will:
 
-### Prerequisites
+- Connect **React frontend ↔ C#/.NET backend**
+- Implement **payment discount calculation** based on credit card type
+- Ensure that on **Pay** click:
+  - Required data is sent to the backend
+  - Discount is calculated correctly
+  - **Discounted total** is displayed clearly on the UI
+- Deliver **clean, production-ready code**:
+  - Clear structure
+  - Meaningful naming
+  - Error handling
+  - Basic tests where appropriate
 
-- Node.js (v14 or higher)
-- npm (v6 or higher)
+---
 
-### Installation
+## ⏱ Timebox
 
-1. **Install Backend Dependencies**
+- **Maximum: 4 hours**
+- Be pragmatic.
+- Prioritize **correctness, clarity, and essentials** over perfection.
+
+> It’s okay to leave things unfinished — just explain your decisions.
+
+---
+
+## 🔀 Before You Start (Fork & Setup)
+
+1. Fork this repository into your **own GitHub account**
+2. Clone your fork locally
+3. Create a feature branch (example):
    ```bash
-   npm install
-   ```
+   git checkout -b feat/payment-impl
 
-2. **Install Frontend Dependencies**
-   ```bash
-   cd frontend
-   npm install
-   ```
 
-### Running the Application
+Implement your solution
 
-You need to run both the backend server and frontend development server:
+Push to your fork
 
-1. **Start the Backend Server** (in the root directory)
-   ```bash
-   node mock-backend.js
-   ```
-   The backend will run on `http://localhost:3000`
+Open a Pull Request to your own main branch
 
-2. **Start the Frontend** (in a new terminal, from the frontend directory)
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-   The frontend will run on `http://localhost:5173`
+Add a file named README-notes.md that includes:
 
-3. **Access the Application**
-   - Open your browser and navigate to `http://localhost:5173`
-   - You will be automatically redirected to `/Payment`
+Key design decisions
 
-## Usage Flow
+Trade-offs made
 
-1. **Shopping Basket Page**
-   - View the basket items with prices
-   - See subtotal, GST (18%), and total amount
-   - Click "Proceed to Pay" button
+Assumptions
 
-2. **Payment Form**
-   - Enter card details:
-     - Card Number: 16 digits (auto-formatted with spaces)
-     - Expiry: MM/YY format
-     - CVV: 3 digits
-   - Click "Pay Now" to submit
-   - Click "Back" to return to basket
+Anything unfinished or intentionally skipped
 
-3. **Order Success**
-   - View confirmation message
-   - Click "Place New Order" to start a new order
+Share your GitHub repository or PR link with us
 
-## API Endpoint
+✅ We value small, meaningful commits over one large commit.
 
-The frontend calls the following backend endpoint:
+🧠 Business Rules
+Discount Calculation (Based on Credit Card Type)
+Card Type	Discount
+Visa	0%
+MasterCard	5%
+RuPay	10%
+Card Type Detection Logic
 
-- **POST** `http://localhost:3000/Payment/Pay`
-  - Request Body:
-    ```json
-    {
-      "cardNumber": "4532123456789012",
-      "expiry": "12/28",
-      "cvv": "123",
-      "amount": 108012.48
-    }
-    ```
-  - Response (200 OK):
-    ```json
-    {
-      "success": true,
-      "message": "Payment processed successfully",
-      "transactionId": "TXN1234567890"
-    }
-    ```
+Use the following logic to determine the card type:
 
-## Technologies Used
+if (cardNumber.StartsWith('4')) return CardType.Visa;
+if (cardNumber.StartsWith('5')) return CardType.MasterCard;
+if (cardNumber.StartsWith('6')) return CardType.RuPay;
 
-- **Frontend**:
-  - React 19
-  - React Router DOM (for routing)
-  - Vite (build tool)
-  - CSS3 (styling)
+// Default
+return CardType.RuPay;
 
-- **Backend**:
-  - Node.js
-  - Express.js
-  - CORS
 
-## Features Implemented
+Note: Default card type must be RuPay, even if the card number does not match known prefixes.
 
-✅ Header component with branding  
-✅ Footer component with copyright  
-✅ Shopping basket with dummy items  
-✅ Subtotal calculation  
-✅ GST calculation (18%)  
-✅ Total with GST display  
-✅ Credit card input form with validation  
-✅ Card number formatting (spaces every 4 digits)  
-✅ Expiry date formatting (MM/YY)  
-✅ CVV validation  
-✅ Backend API integration  
-✅ Loading states during payment processing  
-✅ Error handling  
-✅ Order success screen  
-✅ Default route to /Payment  
-✅ Responsive design  
+🧩 Your Tasks (Checklist)
 
-## Screenshots
+ Wire up the React frontend to call the backend API
 
-### 1. Shopping Basket
-![Shopping Basket](https://github.com/user-attachments/assets/634738f6-bfce-404a-9be4-69702ac21d8e)
+ Identify credit card type based on card number
 
-### 2. Payment Form
-![Payment Form](https://github.com/user-attachments/assets/c285d744-c4df-415f-a697-586b0044b121)
+ Implement discount calculation logic
 
-### 3. Filled Card Details
-![Filled Card](https://github.com/user-attachments/assets/a5743ffc-519c-40ae-82ec-b1bcd718bc0e)
+ Validate credit card number (basic validation is sufficient)
 
-### 4. Order Success
-![Order Success](https://github.com/user-attachments/assets/71246a68-7d6e-499c-ab12-b6f280d756bf)
+ Return a typed, well-structured response (DTO) from backend
+
+ Display results in the UI:
+
+Total amount
+
+Discount applied
+
+Final payable amount
+
+Proper currency formatting
+
+ Handle errors gracefully:
+
+Backend validation errors
+
+User-friendly UI messages
+
+ Provide basic documentation:
+
+How to run the app
+
+How to test
+
+Key decisions and assumptions
+
+Keep commits small with clear commit messages
+
+🧪 Testing Expectations
+
+Tests are encouraged but not mandatory.
+
+If you add tests:
+
+Prefer clarity over coverage
+
+Focus on:
+
+Discount logic
+
+API contract
+
+Key UI behavior
+
+🧱 Tech Stack
+Frontend
+
+React (Vite or CRA)
+
+TypeScript preferred (if scaffolded)
+
+Fetch or Axios
+
+Backend
+
+.NET (C#)
+
+Minimal API or MVC Controller
+
+Tests
+
+Backend: xUnit or NUnit
+
+Frontend: React Testing Library + Vitest / Jest
+
+🎯 What We’re Evaluating
+
+We are not looking for over-engineering.
+
+We are evaluating:
+
+Code structure & readability
+
+Logical reasoning & correctness
+
+API design & data flow
+
+Error handling approach
+
+Attention to detail
+
+Ability to explain trade-offs
+
+Commit discipline
+
+Communication via README-notes.md
+
+🚫 What We Don’t Expect
+
+Authentication
+
+Database persistence
+
+Payment gateway integration
+
+Pixel-perfect UI
+
+Excessive abstraction
+
+✅ Submission Checklist
+
+Before sharing your link, ensure:
+
+ App runs locally
+
+ Discount logic works correctly
+
+ UI shows discount clearly
+
+ Errors are handled gracefully
+
+ README-notes.md is present
+
+ Feature branch is pushed
+
+ Commits are meaningful
+
