@@ -6,7 +6,19 @@ namespace Payments.Domain
     {
         public static CardType GetCardType(string cardNumber)
         {
-            return CardType.RuPay;
+            if (string.IsNullOrWhiteSpace(cardNumber))
+                return CardType.RuPay;
+
+            if (cardNumber.StartsWith("4"))
+                return CardType.Visa;
+
+            if (cardNumber.StartsWith("5"))
+                return CardType.MasterCard;
+
+            if (cardNumber.StartsWith("6"))
+                return CardType.RuPay;
+
+            return CardType.RuPay; // Default return CardType.RuPay;
         }
 
         public static (bool DiscountApplied, decimal FinalAmount) Calculate(CardType cardType, decimal amount)
