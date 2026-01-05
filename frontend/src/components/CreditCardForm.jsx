@@ -6,170 +6,150 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
     cardNumber: '',
     expiry: '',
     cvv: '',
+    name: ''
   });
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [serverError, setServerError] = useState('');
 
-  const formatCardNumber = (value) => {
-    const cleaned = value.replace(/\s/g, '');
-    const formatted = cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
-    return formatted;
-  };
-
-  const formatExpiry = (value) => {
-    const cleaned = value.replace(/\D/g, '');
-    if (cleaned.length >= 2) {
-      return cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4);
-    }
-    return cleaned;
-  };
-
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = value;
 
     if (name === 'cardNumber') {
-      formattedValue = formatCardNumber(value.replace(/\s/g, '').slice(0, 16));
+      const cleaned = value.replace(/\D/g, '');
+      formattedValue = cleaned.replace(/(.{4})/g, '$1 ').trim().slice(0, 19);
     } else if (name === 'expiry') {
-      formattedValue = formatExpiry(value.slice(0, 5));
+      const cleaned = value.replace(/\D/g, '');
+      if (cleaned.length >= 2) {
+        formattedValue = cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4);
+      } else {
+        formattedValue = cleaned;
+      }
     } else if (name === 'cvv') {
-      formattedValue = value.replace(/\D/g, '').slice(0, 3);
+      formattedValue = value.replace(/\D/g, '').slice(0, 4);
     }
 
-    setCardDetails({
-      ...cardDetails,
-      [name]: formattedValue,
-    });
-    setError('');
+    setCardDetails(prev => ({ ...prev, [name]: formattedValue }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const validateForm = () => {
-    const cardNumberClean = cardDetails.cardNumber.replace(/\s/g, '');
-    if (cardNumberClean.length !== 16) {
-      setError('Card number must be 16 digits');
-      return false;
-    }
-    if (cardDetails.expiry.length !== 5) {
-      setError('Expiry must be in MM/YY format');
-      return false;
-    }
-    if (cardDetails.cvv.length !== 3) {
-      setError('CVV must be 3 digits');
-      return false;
-    }
-    return true;
+    const newErrors = {};
+    if (cardDetails.cardNumber.replace(/\s/g, '').length < 13) newErrors.cardNumber = 'Invalid card number';
+    if (cardDetails.expiry.length !== 5) newErrors.expiry = 'Invalid expiry';
+    if (cardDetails.cvv.length < 3) newErrors.cvv = 'Invalid CVV';
+    if (!cardDetails.name) newErrors.name = 'Name is required';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
-    setError('');
+    setServerError('');
 
     try {
-      const response = await fetch('http://localhost:3000/Payment/Pay', {
+      // 1. POINT TO CORRECT PORT (5084)
+      const response = await fetch('http://localhost:5084/Payments/Pay', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          amount: totalAmount,
+          // 2. SEND FLAT DATA (Matches C# PaymentRequest)
           cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
           expiry: cardDetails.expiry,
-          cvv: cardDetails.cvv,
-          amount: totalAmount,
+          cvv: cardDetails.cvv
         }),
       });
 
-      if (response.ok || response.status === 200) {
-        setTimeout(() => {
-          onSuccess();
-        }, 500);
+      if (response.ok) {
+        const data = await response.json();
+        // 3. PASS DATA TO PARENT
+        onSuccess(data); 
       } else {
-        setError('Payment failed. Please try again.');
+        setServerError('Payment failed. Please check your details.');
       }
-    } catch {
-      setError('Unable to connect to payment server. Please try again later.');
+    } catch (err) {
+      console.error(err);
+      setServerError('Unable to connect to server. Is the backend running?');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="payment-container">
-      <div className="credit-card-form">
-        <h2>Enter Card Details</h2>
-        <div className="amount-display">
-          <span>Amount to Pay:</span>
-          <span className="amount">INR {totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+    <div className="payment-form-container">
+      <h3>Enter Card Details</h3>
+      <p className="amount-display">Total to Pay: INR {totalAmount.toLocaleString('en-IN')}</p>
+      
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label>Card Number</label>
+          <input
+            type="text"
+            name="cardNumber"
+            value={cardDetails.cardNumber}
+            onChange={handleInputChange}
+            placeholder="0000 0000 0000 0000"
+            className={errors.cardNumber ? 'error' : ''}
+          />
+          {errors.cardNumber && <span className="error-text">{errors.cardNumber}</span>}
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <div className="form-row">
           <div className="form-group">
-            <label htmlFor="cardNumber">Card Number</label>
+            <label>Expiry (MM/YY)</label>
             <input
               type="text"
-              id="cardNumber"
-              name="cardNumber"
-              placeholder="1234 5678 9012 3456"
-              value={cardDetails.cardNumber}
-              onChange={handleChange}
-              required
+              name="expiry"
+              value={cardDetails.expiry}
+              onChange={handleInputChange}
+              placeholder="MM/YY"
+              maxLength="5"
+              className={errors.expiry ? 'error' : ''}
             />
           </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="expiry">Expiry Date</label>
-              <input
-                type="text"
-                id="expiry"
-                name="expiry"
-                placeholder="MM/YY"
-                value={cardDetails.expiry}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="cvv">CVV</label>
-              <input
-                type="text"
-                id="cvv"
-                name="cvv"
-                placeholder="123"
-                value={cardDetails.cvv}
-                onChange={handleChange}
-                required
-              />
-            </div>
+          <div className="form-group">
+            <label>CVV</label>
+            <input
+              type="password"
+              name="cvv"
+              value={cardDetails.cvv}
+              onChange={handleInputChange}
+              placeholder="123"
+              maxLength="4"
+              className={errors.cvv ? 'error' : ''}
+            />
           </div>
+        </div>
 
-          {error && <div className="error-message">{error}</div>}
+        <div className="form-group">
+          <label>Cardholder Name</label>
+          <input
+            type="text"
+            name="name"
+            value={cardDetails.name}
+            onChange={handleInputChange}
+            placeholder="Name on card"
+            className={errors.name ? 'error' : ''}
+          />
+        </div>
 
-          <div className="button-group">
-            <button 
-              type="button" 
-              className="back-button" 
-              onClick={onBack}
-              disabled={loading}
-            >
-              Back
-            </button>
-            <button 
-              type="submit" 
-              className="submit-button"
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : 'Pay Now'}
-            </button>
-          </div>
-        </form>
-      </div>
+        {serverError && <div className="server-error">{serverError}</div>}
+
+        <div className="button-group">
+          <button type="button" onClick={onBack} className="back-button" disabled={loading}>Back</button>
+          <button type="submit" className="pay-submit-button" disabled={loading}>
+            {loading ? 'Processing...' : 'Pay Now'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

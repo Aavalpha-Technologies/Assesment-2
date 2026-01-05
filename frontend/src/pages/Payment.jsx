@@ -6,6 +6,8 @@ import './Payment.css';
 const Payment = () => {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  // NEW: Store the receipt data
+  const [successData, setSuccessData] = useState(null);
 
   const basketItems = [
     { id: 1, name: 'Laptop', price: 76000 },
@@ -18,20 +20,18 @@ const Payment = () => {
   const gstAmount = subtotal * gstRate;
   const totalWithGST = subtotal + gstAmount;
 
-  const handlePayClick = () => {
-    setShowPaymentForm(true);
-  };
+  const handlePayClick = () => setShowPaymentForm(true);
+  const handleBackToBasket = () => setShowPaymentForm(false);
 
-  const handlePaymentSuccess = () => {
+  // NEW: Receive data from the form
+  const handlePaymentSuccess = (data) => {
+    setSuccessData(data);
     setOrderPlaced(true);
   };
 
-  const handleBackToBasket = () => {
-    setShowPaymentForm(false);
-  };
-
   if (orderPlaced) {
-    return <OrderSuccess />;
+    // NEW: Pass data to success screen
+    return <OrderSuccess data={successData} />;
   }
 
   if (showPaymentForm) {
@@ -58,23 +58,12 @@ const Payment = () => {
         </div>
         
         <div className="basket-summary">
-          <div className="summary-row">
-            <span>Subtotal:</span>
-            <span>INR {subtotal.toLocaleString('en-IN')}</span>
-          </div>
-          <div className="summary-row">
-            <span>GST (18%):</span>
-            <span>INR {gstAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-          </div>
-          <div className="summary-row total">
-            <span>Total with GST:</span>
-            <span>INR {totalWithGST.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-          </div>
+          <div className="summary-row"><span>Subtotal:</span><span>INR {subtotal.toLocaleString('en-IN')}</span></div>
+          <div className="summary-row"><span>GST (18%):</span><span>INR {gstAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span></div>
+          <div className="summary-row total"><span>Total:</span><span>INR {totalWithGST.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span></div>
         </div>
 
-        <button className="pay-button" onClick={handlePayClick}>
-          Proceed to Pay
-        </button>
+        <button className="pay-button" onClick={handlePayClick}>Proceed to Pay</button>
       </div>
     </div>
   );
