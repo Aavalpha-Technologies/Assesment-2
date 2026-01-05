@@ -71,7 +71,8 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3000/Payment/Pay', {
+  // Update port to 5084 to match .NET backend
+const response = await fetch('http://localhost:5084/Payments/Pay', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -85,8 +86,12 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
       });
 
       if (response.ok || response.status === 200) {
+        // 1. Get the calculation result from the backend
+        const data = await response.json();
+        
         setTimeout(() => {
-          onSuccess();
+          // 2. Pass this data to the success handler
+          onSuccess(data); 
         }, 500);
       } else {
         setError('Payment failed. Please try again.');

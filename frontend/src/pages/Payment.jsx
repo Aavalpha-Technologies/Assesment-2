@@ -6,6 +6,8 @@ import './Payment.css';
 const Payment = () => {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  // NEW: State to hold the receipt data from the backend
+  const [successData, setSuccessData] = useState(null);
 
   const basketItems = [
     { id: 1, name: 'Laptop', price: 76000 },
@@ -22,7 +24,9 @@ const Payment = () => {
     setShowPaymentForm(true);
   };
 
-  const handlePaymentSuccess = () => {
+  // UPDATED: Accept 'data' from the form and save it
+  const handlePaymentSuccess = (data) => {
+    setSuccessData(data);
     setOrderPlaced(true);
   };
 
@@ -31,7 +35,8 @@ const Payment = () => {
   };
 
   if (orderPlaced) {
-    return <OrderSuccess />;
+    // UPDATED: Pass the data to the success component
+    return <OrderSuccess data={successData} />;
   }
 
   if (showPaymentForm) {
