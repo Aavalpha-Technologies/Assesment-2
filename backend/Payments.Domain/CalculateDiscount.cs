@@ -4,6 +4,7 @@ namespace Payments.Domain
 {
     public class CalculateDiscount
     {
+        // Detect card type based on first digit
         public static CardType GetCardType(string cardNumber)
         {
             if (string.IsNullOrWhiteSpace(cardNumber))
@@ -18,21 +19,25 @@ namespace Payments.Domain
             if (cardNumber.StartsWith("6"))
                 return CardType.RuPay;
 
+            // Default to RuPay if unknown
             return CardType.RuPay;
         }
 
+        // Calculate discount based on card type
         public static (bool DiscountApplied, decimal FinalAmount) Calculate(CardType cardType, decimal amount)
         {
-            decimal discountPercentage = 0;
+            decimal discountPercentage = cardType switch
+            {
+                CardType.Visa => 0m,          // 0%
+                CardType.MasterCard => 0.05m, // 5%
+                CardType.RuPay => 0.10m,      // 10%
+                _ => 0m
+            };
 
-            if (cardType == CardType.MasterCard)
-                discountPercentage = 0.05m;
-            else if (cardType == CardType.RuPay)
-                discountPercentage = 0.10m;
+            decimal discountAmount = amount * discountPercentage;
+            decimal finalAmount = amount - discountAmount;
 
-            var finalAmount = amount - (amount * discountPercentage);
-
-            return (discountPercentage > 0, finalAmount);
+            return (discountAmount > 0, finalAmount);
         }
     }
 }

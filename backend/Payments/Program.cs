@@ -1,11 +1,22 @@
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
+// Add OpenAPI/Swagger
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
+
+// ----- ENABLE CORS FOR FRONTEND -----
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy => policy
+            .WithOrigins("http://localhost:5173") // तुझा frontend address
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+// ------------------------------------
 
 var app = builder.Build();
 
@@ -17,7 +28,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Use CORS policy
+app.UseCors("AllowFrontend");
+
+app.UseHttpsRedirection(); // optional, HTTP frontend साठी redirect करेल तर fetch fetch://error येऊ शकते
 
 app.UseAuthorization();
 
