@@ -1,25 +1,28 @@
-import React, { useState } from 'react';
-import './CreditCardForm.css';
+import React, { useState } from "react";
+import "./CreditCardForm.css";
+import "./PaymentSummary.css";
 
 const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
+  const [paymentResult, setPaymentResult] = useState(null);
+
   const [cardDetails, setCardDetails] = useState({
-    cardNumber: '',
-    expiry: '',
-    cvv: '',
+    cardNumber: "",
+    expiry: "",
+    cvv: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const formatCardNumber = (value) => {
-    const cleaned = value.replace(/\s/g, '');
-    const formatted = cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
+    const cleaned = value.replace(/\s/g, "");
+    const formatted = cleaned.match(/.{1,4}/g)?.join(" ") || cleaned;
     return formatted;
   };
 
   const formatExpiry = (value) => {
-    const cleaned = value.replace(/\D/g, '');
+    const cleaned = value.replace(/\D/g, "");
     if (cleaned.length >= 2) {
-      return cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4);
+      return cleaned.slice(0, 2) + "/" + cleaned.slice(2, 4);
     }
     return cleaned;
   };
@@ -28,33 +31,33 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
     const { name, value } = e.target;
     let formattedValue = value;
 
-    if (name === 'cardNumber') {
-      formattedValue = formatCardNumber(value.replace(/\s/g, '').slice(0, 16));
-    } else if (name === 'expiry') {
+    if (name === "cardNumber") {
+      formattedValue = formatCardNumber(value.replace(/\s/g, "").slice(0, 16));
+    } else if (name === "expiry") {
       formattedValue = formatExpiry(value.slice(0, 5));
-    } else if (name === 'cvv') {
-      formattedValue = value.replace(/\D/g, '').slice(0, 3);
+    } else if (name === "cvv") {
+      formattedValue = value.replace(/\D/g, "").slice(0, 3);
     }
 
     setCardDetails({
       ...cardDetails,
       [name]: formattedValue,
     });
-    setError('');
+    setError("");
   };
 
   const validateForm = () => {
-    const cardNumberClean = cardDetails.cardNumber.replace(/\s/g, '');
+    const cardNumberClean = cardDetails.cardNumber.replace(/\s/g, "");
     if (cardNumberClean.length !== 16) {
-      setError('Card number must be 16 digits');
+      setError("Card number must be 16 digits");
       return false;
     }
     if (cardDetails.expiry.length !== 5) {
-      setError('Expiry must be in MM/YY format');
+      setError("Expiry must be in MM/YY format");
       return false;
     }
     if (cardDetails.cvv.length !== 3) {
-      setError('CVV must be 3 digits');
+      setError("CVV must be 3 digits");
       return false;
     }
     return true;
@@ -62,37 +65,41 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch('http://localhost:3000/Payment/Pay', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5084/Payments/Pay", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
-          expiry: cardDetails.expiry,
-          cvv: cardDetails.cvv,
           amount: totalAmount,
+          cardDetails: {
+            cardNumber: cardDetails.cardNumber.replace(/\s/g, ""),
+            expiry: cardDetails.expiry,
+            cvv: cardDetails.cvv,
+          },
         }),
       });
 
-      if (response.ok || response.status === 200) {
+      if (response.ok) {
+        const data = await response.json();
+        setPaymentResult(data);
         setTimeout(() => {
           onSuccess();
-        }, 500);
+        }, 2500);
       } else {
-        setError('Payment failed. Please try again.');
+        setError("Payment failed. Please try again.");
       }
     } catch {
-      setError('Unable to connect to payment server. Please try again later.');
+      setError("Unable to connect to payment server. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -104,8 +111,43 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
         <h2>Enter Card Details</h2>
         <div className="amount-display">
           <span>Amount to Pay:</span>
-          <span className="amount">INR {totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+          <span className="amount">
+            INR{" "}
+            {totalAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+          </span>
         </div>
+
+        {paymentResult && (
+          <div className="payment-summary">
+            <h4>Payment Summary</h4>
+
+            <div className="payment-summary-row">
+              <span>Card Type</span>
+              <span>{paymentResult.cardType}</span>
+            </div>
+
+            <div className="payment-summary-row">
+              <span>Total Amount</span>
+              <span>
+                INR {paymentResult.totalAmount.toLocaleString("en-IN")}
+              </span>
+            </div>
+
+            <div className="payment-summary-row">
+              <span>Discount</span>
+              <span>
+                - INR {paymentResult.discountAmount.toLocaleString("en-IN")}
+              </span>
+            </div>
+
+            <div className="payment-summary-row payment-summary-total">
+              <span>Final Payable</span>
+              <span>
+                INR {paymentResult.finalAmount.toLocaleString("en-IN")}
+              </span>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -152,20 +194,16 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
           {error && <div className="error-message">{error}</div>}
 
           <div className="button-group">
-            <button 
-              type="button" 
-              className="back-button" 
+            <button
+              type="button"
+              className="back-button"
               onClick={onBack}
               disabled={loading}
             >
               Back
             </button>
-            <button 
-              type="submit" 
-              className="submit-button"
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : 'Pay Now'}
+            <button type="submit" className="submit-button" disabled={loading}>
+              {loading ? "Processing..." : "Pay Now"}
             </button>
           </div>
         </form>

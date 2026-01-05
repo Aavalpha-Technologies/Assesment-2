@@ -8,16 +8,34 @@ namespace Payments.Controllers
     [Route("[controller]")]
     public class PaymentsController : ControllerBase
     {
-        [HttpPost("Pay")]
+        [HttpPost("Pay")] // This appends /Pay to the controller route.
         public IActionResult Pay([FromBody] PaymentRequest request)
         {
-            var cardType = CalculateDiscount.GetCardType(request.CardDetails.CardNumber);
-            var (discountApplied, finalAmount) = CalculateDiscount.Calculate(cardType, request.Amount);
+            if (request == null || request.CardDetails == null)
+                return BadRequest("Invalid payment request");
+
+            if (request.Amount <= 0)
+                return BadRequest("Amount must be greater than zero");
+
+            var cardNumber = request.CardDetails.CardNumber;
+            var cardType = CalculateDiscount.GetCardType(cardNumber);
+
+            decimal discountPercentage = cardType switch
+            {
+                CardType.MasterCard => 5,
+                CardType.RuPay => 10,
+                _ => 0
+            };
+
+            var discountAmount = request.Amount * discountPercentage / 100;
+            var finalAmount = request.Amount - discountAmount;
 
             var response = new PaymentResponse
             {
-                DiscountApplied = discountApplied,
-                Amount = finalAmount
+                CardType = cardType.ToString(),
+                TotalAmount = request.Amount,
+                DiscountAmount = discountAmount,
+                FinalAmount = finalAmount
             };
 
             return Ok(response);
