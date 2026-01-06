@@ -16,10 +16,12 @@ namespace Payments.Controllers
 
             var response = new PaymentResponse
             {
+                CardType = cardType.ToString(),
                 DiscountApplied = discountApplied,
-                Amount = finalAmount
+                OriginalAmount = request.Amount,
+                FinalAmount = finalAmount
             };
-
+            
             return Ok(response);
         }
     }
