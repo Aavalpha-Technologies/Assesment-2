@@ -6,6 +6,7 @@ import './Payment.css';
 const Payment = () => {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [paymentData, setPaymentData] = useState(null);
 
   const basketItems = [
     { id: 1, name: 'Laptop', price: 76000 },
@@ -22,7 +23,15 @@ const Payment = () => {
     setShowPaymentForm(true);
   };
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = (paymentResult) => {
+    if (paymentResult) {
+      setPaymentData({
+        originalAmount: paymentResult.originalAmount || totalWithGST,
+        discountApplied: paymentResult.discountApplied || false,
+        finalAmount: paymentResult.finalAmount || paymentResult.amount || totalWithGST,
+        discountAmount: paymentResult.discountAmount || ((paymentResult.originalAmount || totalWithGST) - (paymentResult.finalAmount || paymentResult.amount || totalWithGST))
+      });
+    }
     setOrderPlaced(true);
   };
 
@@ -31,7 +40,7 @@ const Payment = () => {
   };
 
   if (orderPlaced) {
-    return <OrderSuccess />;
+    return <OrderSuccess paymentData={paymentData} />;
   }
 
   if (showPaymentForm) {
