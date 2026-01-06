@@ -7,15 +7,17 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
     expiry: '',
     cvv: '',
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  
   const formatCardNumber = (value) => {
     const cleaned = value.replace(/\s/g, '');
-    const formatted = cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
-    return formatted;
+    return cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
   };
 
+ 
   const formatExpiry = (value) => {
     const cleaned = value.replace(/\D/g, '');
     if (cleaned.length >= 2) {
@@ -40,11 +42,13 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
       ...cardDetails,
       [name]: formattedValue,
     });
+
     setError('');
   };
 
   const validateForm = () => {
     const cardNumberClean = cardDetails.cardNumber.replace(/\s/g, '');
+
     if (cardNumberClean.length !== 16) {
       setError('Card number must be 16 digits');
       return false;
@@ -62,36 +66,40 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+
+    if (!validateForm()) return;
 
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3000/Payment/Pay', {
+      const response = await fetch('http://localhost:5084/Payments/Pay', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
-          expiry: cardDetails.expiry,
-          cvv: cardDetails.cvv,
           amount: totalAmount,
+          cardDetails: {
+            cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
+            expiry: cardDetails.expiry,
+            cvv: cardDetails.cvv,
+          },
         }),
       });
 
-      if (response.ok || response.status === 200) {
-        setTimeout(() => {
-          onSuccess();
-        }, 500);
-      } else {
-        setError('Payment failed. Please try again.');
+      if (!response.ok) {
+        throw new Error('Payment failed');
       }
-    } catch {
+
+      const data = await response.json();
+
+      
+      setTimeout(() => {
+        onSuccess(data);
+      }, 500);
+
+    } catch (err) {
       setError('Unable to connect to payment server. Please try again later.');
     } finally {
       setLoading(false);
@@ -102,9 +110,12 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
     <div className="payment-container">
       <div className="credit-card-form">
         <h2>Enter Card Details</h2>
+
         <div className="amount-display">
           <span>Amount to Pay:</span>
-          <span className="amount">INR {totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+          <span className="amount">
+            INR {totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+          </span>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -152,16 +163,17 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
           {error && <div className="error-message">{error}</div>}
 
           <div className="button-group">
-            <button 
-              type="button" 
-              className="back-button" 
+            <button
+              type="button"
+              className="back-button"
               onClick={onBack}
               disabled={loading}
             >
               Back
             </button>
-            <button 
-              type="submit" 
+
+            <button
+              type="submit"
               className="submit-button"
               disabled={loading}
             >
