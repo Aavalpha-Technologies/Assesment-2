@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import './CreditCardForm.css';
 
+const isValidExpiry = (value) => {
+  const match = /^(\d{2})\/(\d{2})$/.exec(value);
+  if (!match) return false;
+  const month = Number(match[1]);
+  return month >= 1 && month <= 12;
+};
+
 const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
   const [cardDetails, setCardDetails] = useState({
     cardNumber: '',
@@ -9,6 +16,7 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [paymentResponse, setPaymentResponse] = useState(null);
 
   const formatCardNumber = (value) => {
     const cleaned = value.replace(/\s/g, '');
@@ -49,8 +57,8 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
       setError('Card number must be 16 digits');
       return false;
     }
-    if (cardDetails.expiry.length !== 5) {
-      setError('Expiry must be in MM/YY format');
+    if (!isValidExpiry(cardDetails.expiry)) {
+      setError('Expiry must be a valid MM/YY date (01-12)');
       return false;
     }
     if (cardDetails.cvv.length !== 3) {
@@ -69,34 +77,108 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
 
     setLoading(true);
     setError('');
+    setPaymentResponse(null);
 
     try {
-      const response = await fetch('http://localhost:3000/Payment/Pay', {
+      // Request body structure matches backend PaymentRequest DTO
+      const requestBody = {
+        amount: totalAmount,
+        cardDetails: {
+          cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
+          expiry: cardDetails.expiry,
+          cvv: cardDetails.cvv,
+        }
+      };
+
+      const response = await fetch('http://localhost:5084/Payments/Pay', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
-          expiry: cardDetails.expiry,
-          cvv: cardDetails.cvv,
-          amount: totalAmount,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      if (response.ok || response.status === 200) {
-        setTimeout(() => {
-          onSuccess();
-        }, 500);
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store payment response to display discount information
+        setPaymentResponse(data);
       } else {
-        setError('Payment failed. Please try again.');
+        // Handle validation errors from backend
+        const errorMessage = data.error || 'Payment failed. Please try again.';
+        setError(errorMessage);
       }
-    } catch {
+    } catch (err) {
       setError('Unable to connect to payment server. Please try again later.');
+      console.error('Payment error:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleConfirmPayment = () => {
+    // After displaying discount information, proceed to success page
+    if (paymentResponse) {
+      onSuccess();
+    }
+  };
+
+  // If payment response is received, show discount breakdown
+  if (paymentResponse) {
+    return (
+      <div className="payment-container">
+        <div className="credit-card-form">
+          <h2>Payment Summary</h2>
+          
+          <div className="payment-summary">
+            <div className="summary-row">
+              <span>Card Type:</span>
+              <span className="card-type">{paymentResponse.cardType}</span>
+            </div>
+            <div className="summary-row">
+              <span>Original Amount:</span>
+              <span>INR {paymentResponse.originalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+            </div>
+            
+            {paymentResponse.discountApplied && (
+              <>
+                <div className="summary-row discount">
+                  <span>Discount ({paymentResponse.discountPercentage}%):</span>
+                  <span className="discount-amount">
+                    - INR {paymentResponse.discountAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </>
+            )}
+            
+            <div className="summary-row total">
+              <span>Final Amount to Pay:</span>
+              <span className="final-amount">
+                INR {paymentResponse.finalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+
+          <div className="button-group">
+            <button 
+              type="button" 
+              className="back-button" 
+              onClick={() => setPaymentResponse(null)}
+            >
+              Back
+            </button>
+            <button 
+              type="button" 
+              className="submit-button"
+              onClick={handleConfirmPayment}
+            >
+              Confirm Payment
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="payment-container">
