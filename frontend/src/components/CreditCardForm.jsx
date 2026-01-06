@@ -71,16 +71,19 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3000/Payment/Pay', {
+      const response = await fetch('http://localhost:5084/Payments/Pay', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
-          expiry: cardDetails.expiry,
-          cvv: cardDetails.cvv,
-          amount: totalAmount,
+          amount:totalAmount,
+          cardDetails:{
+            cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
+            expiry: cardDetails.expiry,
+            cvv: cardDetails.cvv,
+          },
+          
         }),
       });
 
