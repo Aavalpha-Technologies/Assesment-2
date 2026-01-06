@@ -2,7 +2,12 @@ namespace Payments
 {
     public class PaymentResponse
     {
-        public bool DiscountApplied { get; set; }
-        public decimal Amount { get; set; }
+        public string CardType { get; set; } = string.Empty;
+
+        public decimal OriginalAmount { get; set; }
+
+        public decimal DiscountApplied { get; set; }
+
+        public decimal FinalAmount { get; set; }
     }
 }
