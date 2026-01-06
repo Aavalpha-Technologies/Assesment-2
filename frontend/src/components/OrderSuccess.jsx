@@ -1,7 +1,7 @@
 import React from 'react';
 import './OrderSuccess.css';
 
-const OrderSuccess = () => {
+const OrderSuccess = ({ paymentData }) => {
   const handleNewOrder = () => {
     window.location.href = '/Payment';
   };
@@ -26,6 +26,32 @@ const OrderSuccess = () => {
         </div>
         
         <h1>Order Placed Successfully!</h1>
+        
+        {paymentData && typeof paymentData.originalAmount === 'number' && typeof paymentData.finalAmount === 'number' && (
+          <div className="payment-summary">
+            <h3>Payment Details</h3>
+            <div className="summary-breakdown">
+              <div className="summary-item">
+                <span>Original Amount:</span>
+                <span>INR {(paymentData.originalAmount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+              </div>
+              {paymentData.discountApplied && typeof paymentData.discountAmount === 'number' && paymentData.discountAmount > 0 && (
+                <div className="summary-item discount-item">
+                  <span>Discount:</span>
+                  <span className="discount-value">
+                    -INR {paymentData.discountAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
+              <div className="summary-item total-item">
+                <span>Amount Paid:</span>
+                <span className="final-value">
+                  INR {(paymentData.finalAmount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
         
         <p className="thank-you-message">
           Thank you for your purchase. Your order has been confirmed and will be processed shortly.
