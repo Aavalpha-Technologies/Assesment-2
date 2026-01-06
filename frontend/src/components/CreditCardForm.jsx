@@ -7,13 +7,15 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
     expiry: '',
     cvv: '',
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [paymentResult, setPaymentResult] = useState(null);
 
+  // ---- helpers ----
   const formatCardNumber = (value) => {
     const cleaned = value.replace(/\s/g, '');
-    const formatted = cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
-    return formatted;
+    return cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
   };
 
   const formatExpiry = (value) => {
@@ -24,151 +26,203 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
     return cleaned;
   };
 
+  const formatINR = (value) =>
+    new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+    }).format(Number(value) || 0);
+
+  // ---- input handler ----
   const handleChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = value;
 
     if (name === 'cardNumber') {
-      formattedValue = formatCardNumber(value.replace(/\s/g, '').slice(0, 16));
+      formattedValue = formatCardNumber(
+        value.replace(/\s/g, '').slice(0, 16)
+      );
     } else if (name === 'expiry') {
       formattedValue = formatExpiry(value.slice(0, 5));
     } else if (name === 'cvv') {
       formattedValue = value.replace(/\D/g, '').slice(0, 3);
     }
 
-    setCardDetails({
-      ...cardDetails,
-      [name]: formattedValue,
-    });
+    setCardDetails({ ...cardDetails, [name]: formattedValue });
     setError('');
   };
 
+  // ---- validation ----
   const validateForm = () => {
     const cardNumberClean = cardDetails.cardNumber.replace(/\s/g, '');
-    if (cardNumberClean.length !== 16) {
-      setError('Card number must be 16 digits');
+
+    if (cardNumberClean.length < 6) {
+      setError('Card number looks too short');
       return false;
     }
-    if (cardDetails.expiry.length !== 5) {
-      setError('Expiry must be in MM/YY format');
-      return false;
-    }
+
     if (cardDetails.cvv.length !== 3) {
       setError('CVV must be 3 digits');
       return false;
     }
+
+    if (!cardDetails.expiry || cardDetails.expiry.length < 4) {
+      setError('Invalid expiry date');
+      return false;
+    }
+
     return true;
   };
 
+  // ---- submit ----
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3000/Payment/Pay', {
+      const response = await fetch('http://localhost:5084/Payments/Pay', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
-          expiry: cardDetails.expiry,
-          cvv: cardDetails.cvv,
-          amount: totalAmount,
+          amount: Number(totalAmount),
+          cardDetails: {
+            cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
+          },
         }),
       });
 
-      if (response.ok || response.status === 200) {
-        setTimeout(() => {
-          onSuccess();
-        }, 500);
-      } else {
-        setError('Payment failed. Please try again.');
+      if (!response.ok) {
+        const err = await response.json().catch(() => null);
+        setError(err?.message || 'Payment failed. Please try again.');
+        return;
       }
-    } catch {
-      setError('Unable to connect to payment server. Please try again later.');
+
+      const data = await response.json();
+      setPaymentResult(data);
+    } catch (err) {
+      console.error('Fetch failed:', err);
+      setError('Network error or CORS issue.');
     } finally {
       setLoading(false);
     }
   };
 
+  // ---- UI ----
   return (
     <div className="payment-container">
       <div className="credit-card-form">
         <h2>Enter Card Details</h2>
+
         <div className="amount-display">
           <span>Amount to Pay:</span>
-          <span className="amount">INR {totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+          <span className="amount">{formatINR(totalAmount)}</span>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="cardNumber">Card Number</label>
-            <input
-              type="text"
-              id="cardNumber"
-              name="cardNumber"
-              placeholder="1234 5678 9012 3456"
-              value={cardDetails.cardNumber}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-row">
+        {!paymentResult && (
+          <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="expiry">Expiry Date</label>
+              <label>Card Number</label>
               <input
                 type="text"
-                id="expiry"
-                name="expiry"
-                placeholder="MM/YY"
-                value={cardDetails.expiry}
+                name="cardNumber"
+                value={cardDetails.cardNumber}
                 onChange={handleChange}
+                placeholder="1234 5678 9012 3456"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="cvv">CVV</label>
-              <input
-                type="text"
-                id="cvv"
-                name="cvv"
-                placeholder="123"
-                value={cardDetails.cvv}
-                onChange={handleChange}
-                required
-              />
+            <div className="form-row">
+              <div className="form-group">
+                <label>Expiry Date</label>
+                <input
+                  type="text"
+                  name="expiry"
+                  value={cardDetails.expiry}
+                  onChange={handleChange}
+                  placeholder="MM/YY"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>CVV</label>
+                <input
+                  type="password"
+                  name="cvv"
+                  value={cardDetails.cvv}
+                  onChange={handleChange}
+                  placeholder="123"
+                />
+              </div>
+            </div>
+
+            {error && <div className="error-message">{error}</div>}
+
+            <div className="button-group">
+              <button
+                type="button"
+                className="back-button"
+                onClick={onBack}
+              >
+                Back
+              </button>
+
+              <button
+                type="submit"
+                className="submit-button"
+                disabled={loading}
+              >
+                {loading ? 'Processing...' : 'Pay Now'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {paymentResult && (
+          <div className="payment-result">
+            <h3>Payment Summary</h3>
+
+            <div className="summary-row">
+              <span>Original Amount:</span>
+              <span>{formatINR(paymentResult.originalAmount)}</span>
+            </div>
+
+            <div className="summary-row">
+              <span>Card Type:</span>
+              <span>{paymentResult.cardType}</span>
+            </div>
+
+            <div className="summary-row">
+              <span>
+                Discount ({paymentResult.discountPercentage}%):
+              </span>
+              <span>{formatINR(paymentResult.discountAmount)}</span>
+            </div>
+
+            <div className="summary-row total">
+              <span>Final Payable:</span>
+              <span>{formatINR(paymentResult.finalAmount)}</span>
+            </div>
+
+            <div className="button-group">
+              <button
+                className="back-button"
+                onClick={() => setPaymentResult(null)}
+              >
+                Pay Another
+              </button>
+
+              <button
+                className="submit-button"
+                onClick={onSuccess}
+              >
+                Confirm Order
+              </button>
             </div>
           </div>
-
-          {error && <div className="error-message">{error}</div>}
-
-          <div className="button-group">
-            <button 
-              type="button" 
-              className="back-button" 
-              onClick={onBack}
-              disabled={loading}
-            >
-              Back
-            </button>
-            <button 
-              type="submit" 
-              className="submit-button"
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : 'Pay Now'}
-            </button>
-          </div>
-        </form>
+        )}
       </div>
     </div>
   );
