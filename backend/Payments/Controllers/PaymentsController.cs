@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Payments;
 using Payments.Domain;
 
 namespace Payments.Controllers
@@ -11,8 +10,14 @@ namespace Payments.Controllers
         [HttpPost("Pay")]
         public IActionResult Pay([FromBody] PaymentRequest request)
         {
+            if (request == null || request.CardDetails == null)
+            {
+                return BadRequest("Invalid payment request");
+            }
+
             var cardType = CalculateDiscount.GetCardType(request.CardDetails.CardNumber);
-            var (discountApplied, finalAmount) = CalculateDiscount.Calculate(cardType, request.Amount);
+            var (discountApplied, finalAmount) =
+                CalculateDiscount.Calculate(cardType, request.Amount);
 
             var response = new PaymentResponse
             {
