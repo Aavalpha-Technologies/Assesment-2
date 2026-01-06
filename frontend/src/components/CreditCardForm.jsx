@@ -9,6 +9,7 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [paymentResult, setPaymentResult] = useState(null);
 
   const formatCardNumber = (value) => {
     const cleaned = value.replace(/\s/g, '');
@@ -71,25 +72,38 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3000/Payment/Pay', {
+      const response = await fetch('http://localhost:5084/Payments/Pay', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
-          expiry: cardDetails.expiry,
-          cvv: cardDetails.cvv,
           amount: totalAmount,
+          cardDetails: {
+            cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
+            expiry: cardDetails.expiry,
+            cvv: cardDetails.cvv}, 
         }),
       });
 
       if (response.ok || response.status === 200) {
+        const data = await response.json();
+        // Store payment result with discount information
+        const paymentResult = {
+          originalAmount: totalAmount,
+          discountApplied: data.discountApplied,
+          finalAmount: data.amount,
+          discountAmount: totalAmount - data.amount
+        };
+        setPaymentResult(paymentResult);
+        
+        // Pass discount data to parent component
         setTimeout(() => {
-          onSuccess();
+          onSuccess(paymentResult);
         }, 500);
       } else {
-        setError('Payment failed. Please try again.');
+        const errorData = await response.json().catch(() => ({}));
+        setError(errorData.message || 'Payment failed. Please try again.');
       }
     } catch {
       setError('Unable to connect to payment server. Please try again later.');
@@ -106,6 +120,34 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
           <span>Amount to Pay:</span>
           <span className="amount">INR {totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
         </div>
+
+        {paymentResult && (
+          <div className="discount-summary">
+            <h3>Payment Summary</h3>
+            <div className="summary-details">
+              <div className="summary-row">
+                <span>Original Amount:</span>
+                <span>INR {paymentResult.originalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+              </div>
+              {paymentResult.discountApplied && (
+                <>
+                  <div className="summary-row discount">
+                    <span>Discount Applied:</span>
+                    <span className="discount-amount">
+                      -INR {paymentResult.discountAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </>
+              )}
+              <div className="summary-row total">
+                <span>Final Amount:</span>
+                <span className="final-amount">
+                  INR {paymentResult.finalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
