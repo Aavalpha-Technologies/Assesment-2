@@ -65,9 +65,9 @@ Anything unfinished or intentionally skipped
 
 Share your GitHub repository or PR link with us
 
-✅ We value small, meaningful commits over one large commit.
+ ✅ We value small, meaningful commits over one large commit.
 
-🧠 Business Rules
+##🧠 Business Rules
 Discount Calculation (Based on Credit Card Type)
 Card Type	Discount
 Visa	0%
@@ -87,7 +87,7 @@ return CardType.RuPay;
 
 Note: Default card type must be RuPay, even if the card number does not match known prefixes.
 
-🧩 Your Tasks (Checklist)
+##🧩 Your Tasks (Checklist)
 
  Wire up the React frontend to call the backend API
 
@@ -125,7 +125,7 @@ Key decisions and assumptions
 
 Keep commits small with clear commit messages
 
-🧪 Testing Expectations
+## 🧪 Testing Expectations
 
 Tests are encouraged but not mandatory.
 
@@ -141,7 +141,7 @@ API contract
 
 Key UI behavior
 
-🧱 Tech Stack
+##🧱 Tech Stack
 Frontend
 
 React (Vite or CRA)
@@ -162,7 +162,7 @@ Backend: xUnit or NUnit
 
 Frontend: React Testing Library + Vitest / Jest
 
-🎯 What We’re Evaluating
+## 🎯 What We’re Evaluating
 
 We are not looking for over-engineering.
 
@@ -196,7 +196,7 @@ Pixel-perfect UI
 
 Excessive abstraction
 
-✅ Submission Checklist
+## ✅ Submission Checklist
 
 Before sharing your link, ensure:
 
