@@ -7,9 +7,12 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
     expiry: '',
     cvv: '',
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [paymentResult, setPaymentResult] = useState(null);   // 🔹 NEW
 
+  // ---------- Formatting Helpers ----------
   const formatCardNumber = (value) => {
     const cleaned = value.replace(/\s/g, '');
     const formatted = cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
@@ -24,6 +27,7 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
     return cleaned;
   };
 
+  // ---------- Input Change ----------
   const handleChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = value;
@@ -43,6 +47,7 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
     setError('');
   };
 
+  // ---------- Validation ----------
   const validateForm = () => {
     const cardNumberClean = cardDetails.cardNumber.replace(/\s/g, '');
     if (cardNumberClean.length !== 16) {
@@ -60,51 +65,62 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
     return true;
   };
 
+  // ---------- SUBMIT → BACKEND ----------
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+
+    if (!validateForm()) return;
 
     setLoading(true);
     setError('');
+    setPaymentResult(null);
 
     try {
-      const response = await fetch('http://localhost:3000/Payment/Pay', {
+      const response = await fetch('http://localhost:5084/api/payments/calculate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
-          expiry: cardDetails.expiry,
-          cvv: cardDetails.cvv,
-          amount: totalAmount,
+          amount: Number(totalAmount),
+          cardDetails: {
+            cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
+            expiry: cardDetails.expiry,
+            cvv: cardDetails.cvv,
+          },
         }),
       });
 
-      if (response.ok || response.status === 200) {
-        setTimeout(() => {
-          onSuccess();
-        }, 500);
-      } else {
-        setError('Payment failed. Please try again.');
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText || 'Payment failed. Please try again.');
       }
-    } catch {
-      setError('Unable to connect to payment server. Please try again later.');
+
+      // 🔹 Read backend calculation
+      const data = await response.json();
+      setPaymentResult(data);
+
+    } catch (err) {
+      setError(err.message || 'Unable to connect to payment server.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleConfirm = () => {
+    onSuccess(); // Move to OrderSuccess page
   };
 
   return (
     <div className="payment-container">
       <div className="credit-card-form">
         <h2>Enter Card Details</h2>
+
         <div className="amount-display">
           <span>Amount to Pay:</span>
-          <span className="amount">INR {totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+          <span className="amount">
+            INR {totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+          </span>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -152,23 +168,62 @@ const CreditCardForm = ({ totalAmount, onSuccess, onBack }) => {
           {error && <div className="error-message">{error}</div>}
 
           <div className="button-group">
-            <button 
-              type="button" 
-              className="back-button" 
+            <button
+              type="button"
+              className="back-button"
               onClick={onBack}
               disabled={loading}
             >
               Back
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="submit-button"
               disabled={loading}
             >
-              {loading ? 'Processing...' : 'Pay Now'}
+              {loading ? 'Processing...' : 'Calculate Payment'}
             </button>
           </div>
         </form>
+
+        {/* 🔹 BACKEND RESULT */}
+        {paymentResult && (
+  <div className="receipt-card">
+    <h3>🧾 Payment Receipt</h3>
+
+    <div className="receipt-row">
+      <span>Total Amount</span>
+      <span>INR {paymentResult.totalAmount.toLocaleString('en-IN')}</span>
+    </div>
+
+    <div className="receipt-row">
+      <span>Card Type</span>
+      <span>{paymentResult.cardType}</span>
+    </div>
+
+    <div className="receipt-row">
+      <span>Discount Applied</span>
+      <span className={paymentResult.discountApplied ? 'yes' : 'no'}>
+        {paymentResult.discountApplied ? 'Yes' : 'No'}
+      </span>
+    </div>
+
+    <div className="receipt-row">
+      <span>Discount Amount</span>
+      <span>INR {paymentResult.discountAmount.toLocaleString('en-IN')}</span>
+    </div>
+
+    <div className="receipt-row total">
+      <span>Final Payable</span>
+      <span>INR {paymentResult.finalAmount.toLocaleString('en-IN')}</span>
+    </div>
+
+    <button className="confirm-button" onClick={handleConfirm}>
+      ✅ Confirm Order
+    </button>
+  </div>
+)}
+
       </div>
     </div>
   );

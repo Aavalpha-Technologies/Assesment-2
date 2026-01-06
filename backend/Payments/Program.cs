@@ -1,9 +1,19 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// 🔹 Add CORS Service
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy =>
+        {
+            policy.AllowAnyOrigin() // React frontend
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
 
+// Add services to the container.
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 
@@ -18,6 +28,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// 🔹 Enable CORS Middleware (IMPORTANT: before Authorization)
+app.UseCors("AllowReactApp");
 
 app.UseAuthorization();
 
